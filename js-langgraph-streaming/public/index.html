@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Streaming chat agent</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        font-family: system-ui, sans-serif;
+      }
+      body {
+        max-width: 720px;
+        margin: 0 auto;
+        padding: 1.5rem;
+        line-height: 1.5;
+      }
+      h1 { font-size: 1.25rem; margin: 0 0 1rem; }
+      #log { display: flex; flex-direction: column; gap: 0.75rem; min-height: 50vh; }
+      .msg { padding: 0.75rem 1rem; border-radius: 0.75rem; max-width: 90%; white-space: pre-wrap; }
+      .msg.user { align-self: flex-end; background: #2563eb; color: white; }
+      .msg.bot  { align-self: flex-start; background: rgba(127,127,127,.15); }
+      .msg.tool { align-self: flex-start; font-family: ui-monospace, monospace; font-size: .85em; opacity: .8; }
+      form { display: flex; gap: .5rem; margin-top: 1rem; }
+      input[type=text] { flex: 1; padding: .6rem .8rem; border-radius: .5rem; border: 1px solid #888; }
+      button { padding: .6rem 1rem; border-radius: .5rem; border: 0; background: #2563eb; color: white; cursor: pointer; }
+      button:disabled { opacity: .5; cursor: wait; }
+    </style>
+  </head>
+  <body>
+    <h1>Streaming chat agent — LangGraph.js on Coffeece</h1>
+    <div id="log"></div>
+    <form id="form">
+      <input id="input" type="text" autocomplete="off"
+             placeholder="Ask something — e.g. 'what is 17*19?'" required />
+      <button id="send" type="submit">Send</button>
+    </form>
+
+    <script>
+      const log = document.getElementById("log");
+      const form = document.getElementById("form");
+      const input = document.getElementById("input");
+      const sendBtn = document.getElementById("send");
+
+      const history = [];
+
+      function addMessage(cls, text) {
+        const el = document.createElement("div");
+        el.className = `msg ${cls}`;
+        el.textContent = text;
+        log.appendChild(el);
+        el.scrollIntoView({ behavior: "smooth", block: "end" });
+        return el;
+      }
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const userText = input.value.trim();
+        if (!userText) return;
+        input.value = "";
+        sendBtn.disabled = true;
+
+        addMessage("user", userText);
+        history.push({ role: "user", content: userText });
+
+        const botEl = addMessage("bot", "");
+
+        const res = await fetch("/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ messages: history }),
+        });
+
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = "";
+        let assistantText = "";
+
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+          let idx;
+          while ((idx = buffer.indexOf("\n\n")) >= 0) {
+            const frame = buffer.slice(0, idx);
+            buffer = buffer.slice(idx + 2);
+            if (!frame.startsWith("data:")) continue;
+            const json = frame.slice(5).trim();
+            if (!json) continue;
+            try {
+              const ev = JSON.parse(json);
+              if (ev.type === "token") {
+                assistantText += ev.value;
+                botEl.textContent = assistantText;
+              } else if (ev.type === "tool_call") {
+                addMessage("tool", `🔧 calling ${ev.name}(${ev.args})`);
+              } else if (ev.type === "error") {
+                addMessage("tool", `⚠️ ${ev.message}`);
+              }
+            } catch (err) {
+              console.error("bad SSE frame", err, json);
+            }
+          }
+        }
+
+        if (assistantText) {
+          history.push({ role: "assistant", content: assistantText });
+        }
+        sendBtn.disabled = false;
+        input.focus();
+      });
+    </script>
+  </body>
+</html>
