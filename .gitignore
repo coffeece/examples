@@ -1,0 +1,23 @@
+# Go build artifacts
+/go-adk-multiagent/go-adk-multiagent
+/**/bin/
+
+# Node
+node_modules/
+npm-debug.log
+package-lock.json
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.python-version
+
+# Env / secrets
+.env
+.env.local
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
