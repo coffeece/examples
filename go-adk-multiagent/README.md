@@ -29,7 +29,7 @@ automatically.
 ## Deploy on Coffeece
 
 ```bash
-tsuru app create helpdesk go -t <your-team> -o shared-free -p app-free-sandboxed
+tsuru app create helpdesk go -o shared-free
 tsuru env-set -a helpdesk AGENT_GEMINI_API_KEY=YOUR_KEY --private
 tsuru app deploy -a helpdesk .
 ```

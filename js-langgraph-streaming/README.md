@@ -15,7 +15,7 @@ Tools available to the agent:
 ## Deploy on Coffeece
 
 ```bash
-tsuru app create chatbot nodejs -t <your-team> -o shared-free -p app-free-sandboxed
+tsuru app create chatbot nodejs -o shared-free
 tsuru env-set -a chatbot \
   ANTHROPIC_API_KEY=YOUR_KEY \
   TAVILY_API_KEY=YOUR_TAVILY_KEY \

@@ -22,10 +22,10 @@ START ─►│  classify  │ ──► │ draft │ ──► (pause: awaitin
 
 ```bash
 # 1. Create the app
-tsuru app create maildraft python -t <your-team> -o shared-free -p app-free-sandboxed
+tsuru app create maildraft python -o shared-free
 
 # 2. (Recommended) Bind a postgresql service so paused threads survive restarts
-tsuru service instance add postgresql maildraft-pg starter -t <your-team>
+tsuru service instance add postgresql maildraft-pg db-free
 tsuru service instance bind postgresql maildraft-pg -a maildraft
 
 # 3. Add the LLM key
