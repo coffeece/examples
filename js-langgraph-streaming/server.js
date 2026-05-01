@@ -55,8 +55,11 @@ app.post("/chat", async (req, res) => {
   try {
     const stream = await agent.stream(input, { streamMode: "messages" });
     for await (const [chunk, _meta] of stream) {
-      // chunk is an AIMessageChunk (or ToolMessage on tool returns).
-      // Tool calls show up as `tool_call_chunks` on the AIMessageChunk.
+      // streamMode "messages" yields AIMessageChunk (LLM tokens / tool calls)
+      // and ToolMessage (tool results). Skip tool messages — the calling code
+      // emits a tool_call event instead, and the LLM's follow-up text covers it.
+      if (chunk?.tool_call_id) continue;
+
       if (chunk?.tool_call_chunks?.length) {
         for (const call of chunk.tool_call_chunks) {
           if (call?.name) {
