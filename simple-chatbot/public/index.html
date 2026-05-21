@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Simple chatbot</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        font-family: system-ui, sans-serif;
+      }
+      body {
+        max-width: 720px;
+        margin: 0 auto;
+        padding: 1.5rem;
+        line-height: 1.5;
+      }
+      h1 { font-size: 1.25rem; margin: 0 0 1rem; }
+      #log { display: flex; flex-direction: column; gap: 0.75rem; min-height: 50vh; }
+      .msg { padding: 0.75rem 1rem; border-radius: 0.75rem; max-width: 90%; white-space: pre-wrap; }
+      .msg.user { align-self: flex-end; background: #2563eb; color: white; }
+      .msg.bot  { align-self: flex-start; background: rgba(127,127,127,.15); }
+      .msg.error { align-self: flex-start; background: rgba(220,38,38,.15); font-size: .9em; }
+      form { display: flex; gap: .5rem; margin-top: 1rem; }
+      input[type=text] { flex: 1; padding: .6rem .8rem; border-radius: .5rem; border: 1px solid #888; }
+      button { padding: .6rem 1rem; border-radius: .5rem; border: 0; background: #2563eb; color: white; cursor: pointer; }
+      button:disabled { opacity: .5; cursor: wait; }
+    </style>
+  </head>
+  <body>
+    <h1>Simple chatbot — Claude on Coffeece</h1>
+    <div id="log"></div>
+    <form id="form">
+      <input id="input" type="text" autocomplete="off"
+             placeholder="Say something…" required />
+      <button id="send" type="submit">Send</button>
+    </form>
+
+    <script>
+      const log = document.getElementById("log");
+      const form = document.getElementById("form");
+      const input = document.getElementById("input");
+      const sendBtn = document.getElementById("send");
+
+      // The browser holds the conversation; the server is stateless.
+      const history = [];
+
+      function addMessage(cls, text) {
+        const el = document.createElement("div");
+        el.className = `msg ${cls}`;
+        el.textContent = text;
+        log.appendChild(el);
+        el.scrollIntoView({ behavior: "smooth", block: "end" });
+        return el;
+      }
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const userText = input.value.trim();
+        if (!userText) return;
+        input.value = "";
+        sendBtn.disabled = true;
+
+        addMessage("user", userText);
+        history.push({ role: "user", content: userText });
+
+        const thinking = addMessage("bot", "…");
+
+        try {
+          const res = await fetch("/chat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ messages: history }),
+          });
+          if (!res.ok) {
+            const body = await res.json().catch(() => ({}));
+            throw new Error(body.detail || `HTTP ${res.status}`);
+          }
+          const { reply } = await res.json();
+          thinking.textContent = reply;
+          history.push({ role: "assistant", content: reply });
+        } catch (err) {
+          thinking.remove();
+          addMessage("error", `⚠️ ${err.message}`);
+          history.pop(); // drop the unanswered user turn
+        } finally {
+          sendBtn.disabled = false;
+          input.focus();
+        }
+      });
+    </script>
+  </body>
+</html>
