@@ -9,12 +9,17 @@ README that walks through deploy and usage.
 
 ## Examples
 
-So far the catalog is focused on **AI agents** — a common ask we wanted
-working templates for. More examples (plain web apps, cron jobs, background
-workers, full-stack with managed Postgres) will land here over time.
+So far the catalog is focused on **AI** — chatbots and agents, a common ask we
+wanted working templates for. More examples (plain web apps, cron jobs,
+background workers, full-stack with managed Postgres) will land here over time.
+
+Start with [simple-chatbot](./simple-chatbot) — it's the smallest template and
+a clean base to copy from.
 
 | Example | Stack | What it shows |
 |---|---|---|
+| [simple-chatbot](./simple-chatbot) | Python · [Claude](https://www.anthropic.com/) | The floor: a stateless chatbot that does one Anthropic Messages API call per turn — no framework, no tools, no database. |
+| [mcp-http-server](./mcp-http-server) | Python · [MCP](https://modelcontextprotocol.io/) | An MCP server over Streamable HTTP — give Claude Code or any agent a hosted set of tools. |
 | [go-adk-multiagent](./go-adk-multiagent) | Go · [ADK](https://github.com/google/adk-go) · Gemini | Help-desk coordinator that delegates to billing / technical / escalation sub-agents via `transfer_to_agent`. |
 | [js-langgraph-streaming](./js-langgraph-streaming) | Node · [LangGraph.js](https://github.com/langchain-ai/langgraphjs) · Claude | SSE chat agent that streams tokens to a tiny browser UI; tools include a calculator and Tavily web search. |
 | [python-langgraph-workflow](./python-langgraph-workflow) | Python · [LangGraph](https://github.com/langchain-ai/langgraph) · Claude | Human-in-the-loop email-reply drafter; graph state is checkpointed to a bound `postgresql` service so paused threads survive restarts. |
